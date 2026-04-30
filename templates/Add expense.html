@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Obsidian | Add Expense</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#a78bfa",
+                        "on-primary": "#0a0012",
+                        "primary-container": "#7c3aed",
+                        "surface": "#0c0c0f",
+                        "surface-container": "#121215",
+                        "surface-container-low": "#0f0f12",
+                        "surface-container-high": "#18181b",
+                        "surface-container-highest": "#1e1e22",
+                        "on-surface": "#fafafa",
+                        "on-surface-variant": "#a1a1aa",
+                        "secondary": "#71717a",
+                        "outline": "#52525b",
+                        "outline-variant": "#27272a",
+                        "background": "#09090b",
+                        "error": "#ef4444",
+                        "tertiary": "#34d399",
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', 'Geist', sans-serif; background-color: #09090b; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="bg-background text-on-surface antialiased min-h-screen">
+    <!-- Top Bar -->
+    <header class="bg-zinc-950 border-b border-zinc-800 h-16 flex items-center px-8 sticky top-0 z-10">
+        <div class="flex items-center gap-4 w-full max-w-3xl mx-auto">
+            <a href="{{ url_for('home') }}" class="text-zinc-400 hover:text-zinc-100 transition-colors flex items-center gap-2">
+                <span class="material-symbols-outlined">arrow_back</span>
+                <span class="text-sm font-medium">Back to Dashboard</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-6 py-12">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-6 px-4 py-3 rounded-lg border text-sm
+                        {% if category == 'danger' %}
+                            bg-red-500/10 border-red-500/30 text-red-400
+                        {% elif category == 'success' %}
+                            bg-emerald-500/10 border-emerald-500/30 text-emerald-400
+                        {% else %}
+                            bg-primary/10 border-primary/30 text-primary
+                        {% endif %}
+                    ">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold tracking-tight flex items-center gap-3">
+                <span class="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+                </span>
+                Add New Expense
+            </h1>
+            <p class="text-on-surface-variant text-sm mt-2">Track a new transaction to keep your finances in check.</p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="bg-surface-container border border-outline-variant rounded-2xl p-8">
+            <form method="POST" action="{{ url_for('addexpense') }}">
+
+                <!-- Amount -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-on-surface-variant mb-2" for="amount">
+                        Amount (₹)
+                    </label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-4 flex items-center text-zinc-500 font-bold">₹</span>
+                        <input type="number" step="0.01" name="amount" id="amount" required
+                            class="w-full bg-surface border border-outline-variant rounded-lg pl-10 pr-4 py-3 text-sm text-on-surface placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                            placeholder="0.00"
+                        />
+                    </div>
+                </div>
+
+                <!-- Category -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-on-surface-variant mb-2" for="category">
+                        Category
+                    </label>
+                    <select name="category" id="category" required
+                        class="w-full bg-surface border border-outline-variant rounded-lg px-4 py-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none cursor-pointer">
+                        <option value="" disabled selected class="text-zinc-600">Select a category</option>
+                        <option value="Food & Dining">🍽️ Food & Dining</option>
+                        <option value="Transport">🚗 Transport</option>
+                        <option value="Shopping">🛒 Shopping</option>
+                        <option value="Utilities">⚡ Utilities</option>
+                        <option value="Health">🏥 Health</option>
+                        <option value="Entertainment">🎬 Entertainment</option>
+                        <option value="Education">📚 Education</option>
+                        <option value="Software">💻 Software</option>
+                        <option value="Personal Care">✨ Personal Care</option>
+                        <option value="Other">📦 Other</option>
+                    </select>
+                </div>
+
+                <!-- Date -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-on-surface-variant mb-2" for="date">
+                        Date
+                    </label>
+                    <input type="date" name="date" id="date" required
+                        class="w-full bg-surface border border-outline-variant rounded-lg px-4 py-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                    />
+                </div>
+
+                <!-- Description -->
+                <div class="mb-8">
+                    <label class="block text-sm font-medium text-on-surface-variant mb-2" for="description">
+                        Description
+                    </label>
+                    <textarea name="description" id="description" rows="3"
+                        class="w-full bg-surface border border-outline-variant rounded-lg px-4 py-3 text-sm text-on-surface placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none"
+                        placeholder="What was this expense for?"
+                    ></textarea>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-4">
+                    <button type="submit"
+                        class="flex-1 bg-primary text-on-primary font-bold py-3 rounded-lg hover:opacity-90 active:scale-[0.98] transition-all text-sm flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-lg">check</span>
+                        Add Expense
+                    </button>
+                    <a href="{{ url_for('home') }}"
+                        class="px-6 py-3 rounded-lg border border-outline-variant text-on-surface-variant hover:text-on-surface hover:border-zinc-600 transition-all text-sm font-medium text-center">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </main>
+</body>
+</html>

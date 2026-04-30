@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Obsidian | Register</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#a78bfa",
+                        "on-primary": "#0a0012",
+                        "primary-container": "#7c3aed",
+                        "surface": "#0c0c0f",
+                        "surface-container": "#121215",
+                        "surface-container-low": "#0f0f12",
+                        "surface-container-high": "#18181b",
+                        "on-surface": "#fafafa",
+                        "on-surface-variant": "#a1a1aa",
+                        "outline": "#52525b",
+                        "outline-variant": "#27272a",
+                        "background": "#09090b",
+                        "error": "#ef4444",
+                        "tertiary": "#34d399",
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', 'Geist', sans-serif; background-color: #09090b; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .grid-pattern {
+            background-image: radial-gradient(#27272a 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        .glow-effect { box-shadow: 0 0 60px -15px rgba(167, 139, 250, 0.25); }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex items-center justify-center relative overflow-hidden">
+    <!-- Background Effects -->
+    <div class="absolute inset-0 grid-pattern opacity-15 pointer-events-none"></div>
+    <div class="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-primary/8 rounded-full blur-[140px] pointer-events-none"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+    <div class="relative z-10 w-full max-w-md mx-4">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+            <a href="{{ url_for('index') }}" class="inline-flex items-center gap-2 text-2xl font-bold tracking-tighter text-on-surface hover:text-primary transition-colors">
+                <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">layers</span>
+                Obsidian
+            </a>
+            <p class="text-on-surface-variant text-sm mt-2">Create your account</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 px-4 py-3 rounded-lg border text-sm
+                        {% if category == 'danger' %}
+                            bg-red-500/10 border-red-500/30 text-red-400
+                        {% elif category == 'success' %}
+                            bg-emerald-500/10 border-emerald-500/30 text-emerald-400
+                        {% else %}
+                            bg-primary/10 border-primary/30 text-primary
+                        {% endif %}
+                    ">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Registration Card -->
+        <div class="bg-surface-container border border-outline-variant rounded-2xl p-8 glow-effect">
+            <form method="POST" action="{{ url_for('register') }}">
+                {{ form.hidden_tag() }}
+
+                <!-- Username -->
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-on-surface-variant mb-2" for="username">
+                        Username
+                    </label>
+                    {{ form.username(
+                        class="w-full bg-surface border border-outline-variant rounded-lg px-4 py-3 text-sm text-on-surface placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
+                        placeholder="Enter your username",
+                        id="username"
+                    ) }}
+                    {% for error in form.username.errors %}
+                        <p class="mt-1 text-xs text-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+
+                <!-- Phone Number -->
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-on-surface-variant mb-2" for="phonenumber">
+                        Phone Number
+                    </label>
+                    {{ form.phonenumber(
+                        class="w-full bg-surface border border-outline-variant rounded-lg px-4 py-3 text-sm text-on-surface placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
+                        placeholder="Enter your phone number",
+                        id="phonenumber"
+                    ) }}
+                    {% for error in form.phonenumber.errors %}
+                        <p class="mt-1 text-xs text-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+
+                <!-- Email -->
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-on-surface-variant mb-2" for="email">
+                        Email Address
+                    </label>
+                    {{ form.email(
+                        class="w-full bg-surface border border-outline-variant rounded-lg px-4 py-3 text-sm text-on-surface placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
+                        placeholder="you@example.com",
+                        id="email"
+                    ) }}
+                    {% for error in form.email.errors %}
+                        <p class="mt-1 text-xs text-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+
+                <!-- Password -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-on-surface-variant mb-2" for="password">
+                        Password
+                    </label>
+                    {{ form.password(
+                        class="w-full bg-surface border border-outline-variant rounded-lg px-4 py-3 text-sm text-on-surface placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
+                        placeholder="Create a strong password",
+                        id="password"
+                    ) }}
+                    {% for error in form.password.errors %}
+                        <p class="mt-1 text-xs text-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+
+                <!-- Submit -->
+                {{ form.submit(
+                    class="w-full bg-primary text-on-primary font-bold py-3 rounded-lg hover:opacity-90 active:scale-[0.98] transition-all text-sm cursor-pointer"
+                ) }}
+            </form>
+        </div>
+
+        <!-- Login Link -->
+        <p class="text-center text-sm text-on-surface-variant mt-6">
+            Already have an account?
+            <a href="{{ url_for('login') }}" class="text-primary font-semibold hover:underline">Sign In</a>
+        </p>
+    </div>
+</body>
+</html>
