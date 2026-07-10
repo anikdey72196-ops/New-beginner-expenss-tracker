@@ -141,7 +141,7 @@ def get_dashboard_stats(email):
         date_str = exp.get('date', '')
         
         try:
-            exp_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+            exp_date = datetime.date.fromisoformat(date_str)
         except:
             exp_date = today
             
