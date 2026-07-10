@@ -1,10 +1,12 @@
 from flask import Flask,render_template,redirect,session,request,url_for,flash
 from form import Registration,login as loginform
 import csv_db
+import os
 
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'
+# Security fix: Use environment variable for secret key or generate a random one securely
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(24))
 
 csv_db.init_csv()
 
