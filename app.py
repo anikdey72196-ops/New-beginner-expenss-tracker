@@ -103,7 +103,7 @@ def edit_expense(id):
         flash("Expense updated successfully!", "success")
         return redirect(url_for('home'))
         
-    return render_template("edit expense.html", expense=expense)
+    return render_template("edit.html", expense=expense)
 
 @app.route('/delete_expense/<id>', methods=['GET', 'POST'])
 def delete_expense(id):
