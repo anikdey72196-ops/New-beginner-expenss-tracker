@@ -1,5 +1,6 @@
 from flask import Flask,render_template,redirect,session,request,url_for,flash
 from form import Registration,login as loginform
+from werkzeug.security import generate_password_hash, check_password_hash
 import csv_db
 
 
@@ -21,7 +22,7 @@ def register():
             csv_db.add_user(
                 email=form.email.data,
                 name=form.username.data,
-                password=form.password.data
+                password=generate_password_hash(form.password.data)
             )
             flash("Registered successfully!", "success")
             return redirect(url_for('login'))
@@ -36,7 +37,7 @@ def login():
             user = csv_db.get_user_by_email(form.email.data)
             
             # If the user doesn't exist, or password doesn't match
-            if not user or user['password'] != form.password.data:
+            if not user or not check_password_hash(user['password'], form.password.data):
                 flash("Invalid credentials", "danger")
                 return redirect(url_for('login'))
             
