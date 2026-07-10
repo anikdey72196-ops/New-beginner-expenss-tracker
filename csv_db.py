@@ -104,8 +104,9 @@ def delete_expense(expense_id, email):
 GOOD_CATEGORIES = {'Education', 'Health', 'Utilities', 'Software', 'Personal Care'}
 BAD_CATEGORIES = {'Shopping', 'Entertainment', 'Party/junk food'}
 
-def get_dashboard_stats(email):
-    expenses = get_expenses_by_user(email)
+def get_dashboard_stats(email, expenses=None):
+    if expenses is None:
+        expenses = get_expenses_by_user(email)
     
     if not expenses:
         return {

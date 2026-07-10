@@ -56,7 +56,7 @@ def home():
     # Get expenses for the logged in user to display on the dashboard
     user_email = session.get('email', '')
     expenses = csv_db.get_expenses_by_user(user_email)
-    stats = csv_db.get_dashboard_stats(user_email)
+    stats = csv_db.get_dashboard_stats(user_email, expenses=expenses)
     
     return render_template('home.html', username=session['user'], expenses=expenses, stats=stats)
 
