@@ -100,10 +100,10 @@
                 Obsidian
             </div>
 <div class="hidden md:flex items-center gap-8">
-<a class="text-zinc-400 hover:text-zinc-100 transition-colors" href="#">Features</a>
+{# <a class="text-zinc-400 hover:text-zinc-100 transition-colors" href="#">Features</a>
 <a class="text-zinc-400 hover:text-zinc-100 transition-colors" href="#">Insights</a>
 <a class="text-zinc-400 hover:text-zinc-100 transition-colors" href="#">Pricing</a>
-<a class="text-zinc-400 hover:text-zinc-100 transition-colors" href="#">Docs</a>
+<a class="text-zinc-400 hover:text-zinc-100 transition-colors" href="#">Docs</a> #}
 </div>
 <div class="flex items-center gap-4">
 <button class="hidden md:block text-zinc-400 hover:text-zinc-100 transition-colors text-sm font-medium" onclick="window.location.href='{{ url_for('login') }}'">Sign In</button>
@@ -212,13 +212,11 @@
 <p class="text-lg text-on-surface-variant mb-10 max-w-xl mx-auto leading-relaxed">
                         Stop fighting with cluttered spreadsheets. Start tracking with precision and speed today.
                     </p>
-<div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+<div class="flex flex-col sm:flex-row items-center justify-center gap-8">
 <button class="bg-primary text-on-primary px-10 py-4 rounded-xl font-bold text-lg hover:scale-105 active:scale-95 transition-all" onclick="window.location.href='{{ url_for('register') }}'">
                             Sign Up Now
                         </button>
-<button class="text-on-surface px-10 py-4 rounded-xl font-bold text-lg hover:text-primary transition-all">
-                            Schedule a Demo
-                        </button>
+
 </div>
 </div>
 </div>
@@ -229,21 +227,11 @@
 <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 font-geist text-sm">
 <div class="flex flex-col items-center md:items-start gap-4">
 <div class="text-lg font-bold text-zinc-50">Obsidian</div>
-<p class="text-zinc-500">© 2024 Obsidian Labs. Precision in Darkness.</p>
+<p class="text-zinc-500">© 2026 Obsidian Labs. Precision in Darkness.</p>
 </div>
 <div class="flex gap-8">
-<!-- <a class="text-zinc-500 hover:text-zinc-300 transition-colors" href="#">Privacy Policy</a>
-<a class="text-zinc-500 hover:text-zinc-300 transition-colors" href="#">Terms of Service</a>
-<a class="text-zinc-500 hover:text-zinc-300 transition-colors" href="#">Status</a>
-<a class="text-zinc-500 hover:text-zinc-300 transition-colors" href="#">Github</a> -->
-</div>
-<div class="flex gap-4">
-<a class="text-zinc-500 hover:text-violet-400 transition-opacity hover:opacity-80" href="#">
-<span class="material-symbols-outlined">brand_family</span>
-</a>
-<a class="text-zinc-500 hover:text-violet-400 transition-opacity hover:opacity-80" href="#">
-<span class="material-symbols-outlined">podcasts</span>
-</a>
+
+
 </div>
 </div>
 </footer>
