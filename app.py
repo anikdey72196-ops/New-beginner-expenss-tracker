@@ -1,68 +1,162 @@
-from flask import Flask,render_template,redirect,session,request,url_for,flash
-from form import Registration,login as loginform
-import csv_db
-
+import os
+import datetime
+from flask import Flask, render_template, redirect, session, request, url_for, flash
+from werkzeug.security import generate_password_hash, check_password_hash
+from form import RegistrationForm, LoginForm
+from extensions import db
+from models import User, Expense
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'
+app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///expenses.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-csv_db.init_csv()
+db.init_app(app)
 
-@app.route("/",methods=['GET','POST'])
+with app.app_context():
+    db.create_all()
+
+GOOD_CATEGORIES = {'Education', 'Health', 'Utilities', 'Software', 'Personal Care'}
+BAD_CATEGORIES = {'Shopping', 'Entertainment', 'Party/junk food'}
+
+def get_dashboard_stats(user_id):
+    expenses = Expense.query.filter_by(user_id=user_id).all()
+    
+    if not expenses:
+        return {
+            'overall_score': 5.0,
+            'today_score': 50,
+            'last_month_total': 0.0,
+            'daily_avg_score': 5.0
+        }
+        
+    overall_score = 5.0
+    today_score = 50
+    last_month_total = 0.0
+    
+    today = datetime.date.today()
+    try:
+        first_of_this_month = today.replace(day=1)
+        last_day_last_month = first_of_this_month - datetime.timedelta(days=1)
+        first_of_last_month = last_day_last_month.replace(day=1)
+    except:
+        first_of_last_month = today
+        last_day_last_month = today
+    
+    daily_scores = {}
+    
+    for exp in expenses:
+        category = exp.category
+        amount = exp.amount
+        exp_date = exp.date
+            
+        # Overall score logic (+1 good, -2 bad)
+        if category in GOOD_CATEGORIES:
+            overall_score += 1
+        elif category in BAD_CATEGORIES:
+            overall_score -= 2
+            
+        # Today's score (starts at 50, +10 good, -20 bad, out of 100)
+        if exp_date == today:
+            if category in GOOD_CATEGORIES:
+                today_score += 10
+            elif category in BAD_CATEGORIES:
+                today_score -= 20
+                
+        # Last month total expenses
+        if first_of_last_month <= exp_date <= last_day_last_month:
+            last_month_total += amount
+            
+        # Daily tracking for average
+        if exp_date not in daily_scores:
+            daily_scores[exp_date] = 5.0
+        if category in GOOD_CATEGORIES:
+            daily_scores[exp_date] += 1
+        elif category in BAD_CATEGORIES:
+            daily_scores[exp_date] -= 2
+
+    # Clamping scores to bounds
+    overall_score = max(0.0, min(10.0, overall_score))
+    today_score = max(0, min(100, today_score))
+    
+    # Calculate daily average score
+    if daily_scores:
+        avg = sum(max(0.0, min(10.0, s)) for s in daily_scores.values()) / len(daily_scores)
+        daily_avg_score = round(avg, 1)
+    else:
+        daily_avg_score = 5.0
+
+    return {
+        'overall_score': round(overall_score, 1),
+        'today_score': today_score,
+        'last_month_total': round(last_month_total, 2),
+        'daily_avg_score': daily_avg_score
+    }
+
+
+@app.route("/", methods=['GET', 'POST'])
 def index():
     return render_template('index.html')
 
-@app.route('/register',methods=['GET','POST'])
+@app.route('/register', methods=['GET', 'POST'])
 def register():
-    form = Registration()
+    form = RegistrationForm()
     if request.method == 'POST':
         if form.validate_on_submit():
-            # Store user in CSV database
-            csv_db.add_user(
-                email=form.email.data,
-                name=form.username.data,
-                password=form.password.data
+            # Store user in database
+            existing_user = User.query.filter_by(username=form.username.data).first()
+            if existing_user:
+                flash("Username already exists", "danger")
+                return redirect(url_for('register'))
+            
+            hashed_password = generate_password_hash(form.password.data)
+            new_user = User(
+                username=form.username.data,
+                password_hash=hashed_password
             )
+            db.session.add(new_user)
+            db.session.commit()
             flash("Registered successfully!", "success")
             return redirect(url_for('login'))
     return render_template('register.html', form=form)
     
-@app.route('/login',methods=['GET','POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    form = loginform()
+    form = LoginForm()
     if request.method == 'POST':
         if form.validate_on_submit():
-            # Find the user by their email in our CSV database
-            user = csv_db.get_user_by_email(form.email.data)
+            # Find the user by their username
+            user = User.query.filter_by(username=form.username.data).first()
             
             # If the user doesn't exist, or password doesn't match
-            if not user or user['password'] != form.password.data:
+            if not user or not check_password_hash(user.password_hash, form.password.data):
                 flash("Invalid credentials", "danger")
                 return redirect(url_for('login'))
             
             # If successful
-            session['user'] = user['name']
-            session['email'] = user['email']
+            session['user_id'] = user.id
+            session['user'] = user.username
             flash("Logged in successfully!", "success")
             return redirect(url_for('home'))
     return render_template('login.html', form=form)
 
-@app.route('/home',methods=['GET'])
+@app.route('/home', methods=['GET'])
 def home():
-    if 'user' not in session:
+    if 'user_id' not in session:
         flash("Please login first", "danger")
         return redirect(url_for('login'))
     
     # Get expenses for the logged in user to display on the dashboard
-    user_email = session.get('email', '')
-    expenses = csv_db.get_expenses_by_user(user_email)
-    stats = csv_db.get_dashboard_stats(user_email)
+    user_id = session.get('user_id')
+    expenses = Expense.query.filter_by(user_id=user_id).order_by(Expense.date.desc()).all()
+    expenses_list = [exp.to_dict() for exp in expenses]
+    stats = get_dashboard_stats(user_id)
     
-    return render_template('home.html', username=session['user'], expenses=expenses, stats=stats)
+    return render_template('home.html', username=session['user'], expenses=expenses_list, stats=stats)
 
-@app.route('/addexpense',methods=['GET','POST'])
+@app.route('/addexpense', methods=['GET', 'POST'])
 def addexpense():
-    if 'user' not in session:
+    if 'user_id' not in session:
         flash("Please login first", "danger")
         return redirect(url_for('login'))
     
@@ -70,24 +164,43 @@ def addexpense():
         # Retrieve form data
         amount = request.form.get('amount')
         category = request.form.get('category')
-        date = request.form.get('date') 
+        date_str = request.form.get('date') 
         description = request.form.get('description')
         
-        # Add the expense to CSV
-        csv_db.add_expense(session['email'], amount, category, date, description)
+        try:
+            amount_val = float(amount)
+        except (ValueError, TypeError):
+            flash("Invalid amount", "danger")
+            return redirect(url_for('addexpense'))
+            
+        try:
+            exp_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            exp_date = datetime.date.today()
+        
+        new_expense = Expense(
+            user_id=session['user_id'],
+            amount=amount_val,
+            category=category,
+            date=exp_date,
+            description=description
+        )
+        db.session.add(new_expense)
+        db.session.commit()
+        
         flash("Expense added successfully!", "success")
         return redirect(url_for('home'))
         
-    return render_template("Add expense.html")
+    return render_template("add_expense.html")
 
-@app.route('/edit_expense/<id>', methods=['GET', 'POST'])
+@app.route('/edit_expense/<int:id>', methods=['GET', 'POST'])
 def edit_expense(id):
-    if 'user' not in session:
+    if 'user_id' not in session:
         flash("Please login first", "danger")
         return redirect(url_for('login'))
         
     # Get the specific expense
-    expense = csv_db.get_expense_by_id(id, session['email'])
+    expense = Expense.query.filter_by(id=id, user_id=session['user_id']).first()
     if not expense:
         flash("Expense not found", "danger")
         return redirect(url_for('home'))
@@ -95,23 +208,39 @@ def edit_expense(id):
     if request.method == 'POST':
         amount = request.form.get('amount')
         category = request.form.get('category')
-        date = request.form.get('date')
+        date_str = request.form.get('date')
         description = request.form.get('description')
         
-        # Update the expense
-        csv_db.update_expense(id, session['email'], amount, category, date, description)
+        try:
+            expense.amount = float(amount)
+        except (ValueError, TypeError):
+            flash("Invalid amount", "danger")
+            return redirect(url_for('edit_expense', id=id))
+            
+        expense.category = category
+        try:
+            expense.date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            pass # keep original if invalid
+            
+        expense.description = description
+        db.session.commit()
+        
         flash("Expense updated successfully!", "success")
         return redirect(url_for('home'))
         
-    return render_template("edit expense.html", expense=expense)
+    return render_template("edit.html", expense=expense.to_dict())
 
-@app.route('/delete_expense/<id>', methods=['GET', 'POST'])
+@app.route('/delete_expense/<int:id>', methods=['GET', 'POST'])
 def delete_expense(id):
-    if 'user' not in session:
+    if 'user_id' not in session:
         flash("Please login first", "danger")
         return redirect(url_for('login'))
         
-    if csv_db.delete_expense(id, session['email']):
+    expense = Expense.query.filter_by(id=id, user_id=session['user_id']).first()
+    if expense:
+        db.session.delete(expense)
+        db.session.commit()
         flash("Expense deleted successfully!", "success")
     else:
         flash("Expense not found or could not be deleted.", "danger")
@@ -123,7 +252,6 @@ def logout():
     session.clear()
     flash("Logged out successfully!", "success")
     return redirect(url_for('index'))
-
 
 if __name__ == '__main__':
     app.run(debug=True)
