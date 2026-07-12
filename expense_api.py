@@ -1,6 +1,9 @@
 from flask import Flask
 from datetime import timedelta
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from extensions import db, jwt
 from auth import auth_bp

@@ -1,5 +1,9 @@
 import os
 import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from flask import Flask, render_template, redirect, session, request, url_for, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from form import RegistrationForm, LoginForm
