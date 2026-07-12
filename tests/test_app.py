@@ -156,3 +156,23 @@ def test_edit_delete_expense_authenticated(client):
     with flask_app.app_context():
         deleted_expense = Expense.query.get(expense_id)
         assert deleted_expense is None
+
+def test_add_invalid_amount(client):
+    client.post("/register", data={"username": "testuser_amt", "password": "testpassword", "submit": "Sign Up"})
+    client.post("/login", data={"username": "testuser_amt", "password": "testpassword", "submit": "Sign In"})
+
+    invalid_amounts = ['-100', 'inf', 'nan', '1e10', 'abc']
+    for amt in invalid_amounts:
+        response = client.post("/addexpense", data={
+            "amount": amt,
+            "category": "Education",
+            "date": "2024-01-01",
+            "description": "Books"
+        })
+        # Should redirect back to addexpense or not crash, but expense should not be added
+        assert response.status_code == 302
+
+    with flask_app.app_context():
+        user = User.query.filter_by(username="testuser_amt").first()
+        expenses = Expense.query.filter_by(user_id=user.id).all()
+        assert len(expenses) == 0
