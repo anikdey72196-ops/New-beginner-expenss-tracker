@@ -6,11 +6,13 @@ load_dotenv()
 
 from flask import Flask, render_template, redirect, session, request, url_for, flash
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_wtf.csrf import CSRFProtect
 from form import RegistrationForm, LoginForm
 from extensions import db
 from models import User, Expense
 
 app = Flask(__name__)
+csrf = CSRFProtect(app)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(24))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///expenses.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -234,7 +236,7 @@ def edit_expense(id):
         
     return render_template("edit.html", expense=expense.to_dict())
 
-@app.route('/delete_expense/<int:id>', methods=['GET', 'POST'])
+@app.route('/delete_expense/<int:id>', methods=['POST'])
 def delete_expense(id):
     if 'user_id' not in session:
         flash("Please login first", "danger")
