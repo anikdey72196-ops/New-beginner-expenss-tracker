@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+import math
 from datetime import datetime, timedelta, date
 from models import Expense
 from extensions import db
@@ -30,7 +31,9 @@ def add_expense():
         
     try:
         amount = float(data['amount'])
-    except ValueError:
+        if math.isnan(amount) or math.isinf(amount) or amount < 0 or amount > 1000000000:
+            raise ValueError
+    except (ValueError, TypeError):
         return jsonify({"error": "Amount must be a valid number"}), 400
         
     new_expense = Expense(
@@ -102,8 +105,11 @@ def update_expense(expense_id):
         
     if 'amount' in data:
         try:
-            expense.amount = float(data['amount'])
-        except ValueError:
+            amount_val = float(data['amount'])
+            if math.isnan(amount_val) or math.isinf(amount_val) or amount_val < 0 or amount_val > 1000000000:
+                raise ValueError
+            expense.amount = amount_val
+        except (ValueError, TypeError):
             return jsonify({"error": "Amount must be a valid number"}), 400
         
     if 'category' in data:

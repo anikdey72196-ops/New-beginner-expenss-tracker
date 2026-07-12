@@ -1,4 +1,5 @@
 import os
+import math
 import datetime
 import urllib.parse
 from dotenv import load_dotenv
@@ -235,6 +236,8 @@ def addexpense():
         
         try:
             amount_val = float(amount)
+            if math.isnan(amount_val) or math.isinf(amount_val) or amount_val < 0 or amount_val > 1000000000:
+                raise ValueError
         except (ValueError, TypeError):
             flash("Invalid amount", "danger")
             return redirect(url_for('addexpense'))
@@ -279,7 +282,10 @@ def edit_expense(id):
         description = request.form.get('description')
         
         try:
-            expense.amount = float(amount)
+            amount_val = float(amount)
+            if math.isnan(amount_val) or math.isinf(amount_val) or amount_val < 0 or amount_val > 1000000000:
+                raise ValueError
+            expense.amount = amount_val
         except (ValueError, TypeError):
             flash("Invalid amount", "danger")
             return redirect(url_for('edit_expense', id=id))

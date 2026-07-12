@@ -7,3 +7,8 @@
 **Vulnerability:** The Flask application `app.py` lacked CSRF protection on forms, and the `/delete_expense/<int:id>` endpoint allowed state mutations via GET requests, which could lead to cross-site request forgery attacks enabling unauthorized expense deletion.
 **Learning:** State-changing actions like deletes must never be exposed via GET routes as they can be triggered trivially (e.g., via `<img>` tags). Furthermore, global CSRF protection ensures all POST/PUT/DELETE requests validate a token matching the session.
 **Prevention:** Use POST for all state-changing endpoints and employ a library like `flask_wtf.csrf.CSRFProtect` alongside passing `<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>` in all forms.
+
+## 2024-07-12 - [Fix] Inadequate Expense Amount Validation (NaN, Infinity, Negative)
+**Vulnerability:** The application previously relied solely on Python's `float()` to validate expense amounts. `float()` accepts inputs like `"inf"`, `"nan"`, and negative numbers, which could be exploited to bypass logical checks, corrupt financial calculations (like dashboard stats or total tracking), or cause unexpected logic crashes when dealing with extreme values.
+**Learning:** Never assume type coercion functions like `float()` act as comprehensive boundary validators. Python's `float()` is particularly forgiving and accommodates non-finite representations, which can cause subtle logic bugs if persisted in databases without further checks.
+**Prevention:** Implement explicit boundary and finite checks (`math.isinf()`, `math.isnan()`, `>= 0`, `<= upper_limit`) after converting strings to floats, especially in financial or counting contexts.
