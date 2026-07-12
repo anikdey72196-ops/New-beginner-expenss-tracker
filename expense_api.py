@@ -20,9 +20,14 @@ def create_app():
     DB_HOST = os.environ.get('DB_HOST', 'localhost')
     DB_NAME = os.environ.get('DB_NAME', 'expense_tracker')
     DB_PORT = os.environ.get('DB_PORT', '3306') # <-- Add this line
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-
-
+    db_uri = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+    if DB_HOST != 'localhost' and DB_HOST != '127.0.0.1':
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'connect_args': {'ssl': ctx}}
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     # Configure JWT

@@ -3,7 +3,6 @@ import math
 import datetime
 import urllib.parse
 from dotenv import load_dotenv
-
 load_dotenv()
 
 from flask import Flask, render_template, redirect, session, request, url_for, flash
@@ -12,6 +11,7 @@ from flask_wtf.csrf import CSRFProtect
 from form import RegistrationForm, LoginForm
 from extensions import db
 from models import User, Expense
+import ssl
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(24))
@@ -24,17 +24,15 @@ DB_NAME = os.environ.get('DB_NAME', 'expense_tracker')
 DB_PORT = os.environ.get('DB_PORT', '3306')
 db_uri = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 
-ca_cert_paths = [
-    '/etc/ssl/certs/ca-certificates.crt',
-    '/etc/pki/tls/certs/ca-bundle.crt',
-    '/etc/ssl/ca-bundle.pem',
-    '/etc/pki/tls/cacert.pem',
-    '/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem'
-]
-ca_path = next((p for p in ca_cert_paths if os.path.exists(p)), None)
-if ca_path and DB_HOST != 'localhost':
-    db_uri += f'?ssl_ca={ca_path}'
 app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'connect_args': {
+        'ssl': {
+            'ssl_cert_reqs': ssl.CERT_NONE,
+            'check_hostname': False
+        }
+    }
+}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 csrf = CSRFProtect(app)
