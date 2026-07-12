@@ -21,6 +21,8 @@ DB_PASSWORD_RAW = os.environ.get('DB_PASSWORD', '')
 DB_PASSWORD = urllib.parse.quote_plus(DB_PASSWORD_RAW)
 DB_HOST = os.environ.get('DB_HOST', 'localhost')
 DB_NAME = os.environ.get('DB_NAME', 'expense_tracker')
+DB_PORT = os.environ.get('DB_PORT', '3306') # <-- Add this line
+app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 
 app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
