@@ -78,11 +78,16 @@ def test_logout(client):
     assert response.headers["Location"] == "/"
 
 def test_protected_routes_unauthenticated(client):
-    routes = ["/home", "/addexpense", "/edit_expense/1", "/delete_expense/1"]
+    routes = ["/home", "/addexpense", "/edit_expense/1"]
     for route in routes:
         response = client.get(route)
         assert response.status_code == 302
         assert response.headers["Location"] == "/login"
+
+    # Delete requires POST
+    response = client.post("/delete_expense/1")
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/login"
 
 def test_home_authenticated(client):
     # Register and login
@@ -143,7 +148,7 @@ def test_edit_delete_expense_authenticated(client):
         assert updated_expense.amount == 200.0
 
     # Delete expense
-    response = client.get(f"/delete_expense/{expense_id}")
+    response = client.post(f"/delete_expense/{expense_id}")
     assert response.status_code == 302
     assert response.headers["Location"] == "/home"
 

@@ -7,6 +7,7 @@ load_dotenv()
 
 from flask import Flask, render_template, redirect, session, request, url_for, flash
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_wtf.csrf import CSRFProtect
 from form import RegistrationForm, LoginForm
 from extensions import db
 from models import User, Expense
@@ -22,6 +23,8 @@ DB_NAME = os.environ.get('DB_NAME', 'expense_tracker')
 
 app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+csrf = CSRFProtect(app)
 db.init_app(app)
 
 with app.app_context():
@@ -44,9 +47,7 @@ CATEGORY_META = {
     'Other': {'icon': 'category', 'color_class': 'text-zinc-400', 'bg_class': 'bg-zinc-700/20'},
 }
 
-def get_dashboard_stats(user_id):
-    expenses = Expense.query.filter_by(user_id=user_id).all()
-    
+def get_dashboard_stats(expenses):
     if not expenses:
         today = datetime.date.today()
         chart_data = {'labels': [(today - datetime.timedelta(days=i)).strftime('%a').upper() for i in range(6, -1, -1)], 'data': [0.0]*7}
@@ -68,7 +69,7 @@ def get_dashboard_stats(user_id):
         first_of_this_month = today.replace(day=1)
         last_day_last_month = first_of_this_month - datetime.timedelta(days=1)
         first_of_last_month = last_day_last_month.replace(day=1)
-    except:
+    except Exception:
         first_of_last_month = today
         last_day_last_month = today
     
@@ -215,7 +216,7 @@ def home():
     user_id = session.get('user_id')
     expenses = Expense.query.filter_by(user_id=user_id).order_by(Expense.date.desc()).all()
     expenses_list = [exp.to_dict() for exp in expenses]
-    stats = get_dashboard_stats(user_id)
+    stats = get_dashboard_stats(expenses)
     
     return render_template('home.html', username=session['user'], expenses=expenses_list, stats=stats)
 
@@ -297,7 +298,7 @@ def edit_expense(id):
         
     return render_template("edit.html", expense=expense.to_dict())
 
-@app.route('/delete_expense/<int:id>', methods=['GET', 'POST'])
+@app.route('/delete_expense/<int:id>', methods=['POST'])
 def delete_expense(id):
     if 'user_id' not in session:
         flash("Please login first", "danger")
@@ -320,4 +321,5 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() in ('true', '1', 't')
+    app.run(debug=debug_mode)
