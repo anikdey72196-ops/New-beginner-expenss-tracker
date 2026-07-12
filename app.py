@@ -155,7 +155,65 @@ def home():
     expenses_list = [exp.to_dict() for exp in expenses]
     stats = get_dashboard_stats(expenses)
     
-    return render_template('home.html', username=session['user'], expenses=expenses_list, stats=stats)
+    # Calculate weekly spending
+    today = datetime.date.today()
+    start_of_week = today - datetime.timedelta(days=today.weekday())
+
+    weekly_spending = {i: 0.0 for i in range(7)}
+    category_totals = {}
+
+    for exp in expenses:
+        # Weekly spending
+        if start_of_week <= exp.date <= start_of_week + datetime.timedelta(days=6):
+            day_idx = exp.date.weekday()
+            weekly_spending[day_idx] += exp.amount
+
+        # Category totals (all time)
+        category_totals[exp.category] = category_totals.get(exp.category, 0.0) + exp.amount
+
+    max_spend = max(weekly_spending.values()) if weekly_spending else 0
+
+    chart_data = []
+    days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+    for i in range(7):
+        amount = weekly_spending[i]
+        # h-64 in tailwind is 16rem = 256px
+        # We use percentage for height
+        height_pct = (amount / max_spend * 100) if max_spend > 0 else 5
+        height_pct = max(height_pct, 5)  # min 5% height to be visible
+        chart_data.append({
+            'day': days[i],
+            'amount': round(amount, 2),
+            'height_pct': int(height_pct),
+            'is_today': (start_of_week + datetime.timedelta(days=i)) == today
+        })
+
+    # Top Categories
+    sorted_categories = sorted(category_totals.items(), key=lambda x: x[1], reverse=True)[:4]
+
+    category_info = {
+        'Education': {'icon': 'school', 'color_class': 'text-blue-400', 'bg_class': 'bg-blue-400/10'},
+        'Health': {'icon': 'monitor_heart', 'color_class': 'text-red-400', 'bg_class': 'bg-red-400/10'},
+        'Utilities': {'icon': 'bolt', 'color_class': 'text-yellow-400', 'bg_class': 'bg-yellow-400/10'},
+        'Software': {'icon': 'terminal', 'color_class': 'text-green-400', 'bg_class': 'bg-green-400/10'},
+        'Personal Care': {'icon': 'self_improvement', 'color_class': 'text-pink-400', 'bg_class': 'bg-pink-400/10'},
+        'Shopping': {'icon': 'shopping_bag', 'color_class': 'text-purple-400', 'bg_class': 'bg-purple-400/10'},
+        'Entertainment': {'icon': 'movie', 'color_class': 'text-orange-400', 'bg_class': 'bg-orange-400/10'},
+        'Party/junk food': {'icon': 'local_pizza', 'color_class': 'text-amber-400', 'bg_class': 'bg-amber-400/10'}
+    }
+
+    top_categories = []
+    for cat, total in sorted_categories:
+        info = category_info.get(cat, {'icon': 'category', 'color_class': 'text-zinc-400', 'bg_class': 'bg-zinc-700/20'})
+        top_categories.append({
+            'name': cat,
+            'total': round(total, 2),
+            'icon': info['icon'],
+            'color_class': info['color_class'],
+            'bg_class': info['bg_class']
+        })
+
+    return render_template('home.html', username=session['user'], expenses=expenses_list, stats=stats, chart_data=chart_data, top_categories=top_categories)
 
 @app.route('/addexpense', methods=['GET', 'POST'])
 def addexpense():
