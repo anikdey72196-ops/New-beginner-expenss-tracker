@@ -96,35 +96,7 @@
                     {% endfor %}
                 </div>
 
-                <!-- Phone Number -->
-                <div class="mb-5">
-                    <label class="block text-sm font-medium text-on-surface-variant mb-2" for="phonenumber">
-                        Phone Number
-                    </label>
-                    {{ form.phonenumber(
-                        class="w-full bg-surface border border-outline-variant rounded-lg px-4 py-3 text-sm text-on-surface placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
-                        placeholder="Enter your phone number",
-                        id="phonenumber"
-                    ) }}
-                    {% for error in form.phonenumber.errors %}
-                        <p class="mt-1 text-xs text-error">{{ error }}</p>
-                    {% endfor %}
-                </div>
 
-                <!-- Email -->
-                <div class="mb-5">
-                    <label class="block text-sm font-medium text-on-surface-variant mb-2" for="email">
-                        Email Address
-                    </label>
-                    {{ form.email(
-                        class="w-full bg-surface border border-outline-variant rounded-lg px-4 py-3 text-sm text-on-surface placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
-                        placeholder="you@example.com",
-                        id="email"
-                    ) }}
-                    {% for error in form.email.errors %}
-                        <p class="mt-1 text-xs text-error">{{ error }}</p>
-                    {% endfor %}
-                </div>
 
                 <!-- Password -->
                 <div class="mb-6">

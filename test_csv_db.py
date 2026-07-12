@@ -1,45 +1,84 @@
 import os
-import csv
-import pytest
+from unittest.mock import patch, mock_open
 import csv_db
 
-def test_get_user_by_email_file_not_exists(tmp_path, monkeypatch):
-    """Test when USERS_FILE does not exist"""
-    test_file = tmp_path / "missing_users.csv"
-    monkeypatch.setattr(csv_db, "USERS_FILE", str(test_file))
+def test_init_csv_both_files_exist():
+    with patch('os.path.exists') as mock_exists, \
+         patch('builtins.open', new_callable=mock_open) as mock_file, \
+         patch('csv.writer') as mock_writer:
 
-    assert csv_db.get_user_by_email("test@example.com") is None
+        mock_exists.return_value = True
 
-def test_get_user_by_email_user_exists(tmp_path, monkeypatch):
-    """Test when user exists in USERS_FILE"""
-    test_file = tmp_path / "users.csv"
-    monkeypatch.setattr(csv_db, "USERS_FILE", str(test_file))
+        csv_db.init_csv()
 
-    # Create file with a user
-    with open(test_file, mode="w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["email", "name", "password"])
-        writer.writerow(["test@example.com", "Test User", "password123"])
-        writer.writerow(["other@example.com", "Other User", "pass456"])
+        mock_exists.assert_any_call(csv_db.USERS_FILE)
+        mock_exists.assert_any_call(csv_db.EXPENSES_FILE)
+        mock_file.assert_not_called()
+        mock_writer.assert_not_called()
 
-    user = csv_db.get_user_by_email("test@example.com")
+def test_init_csv_neither_file_exists():
+    with patch('os.path.exists') as mock_exists, \
+         patch('builtins.open', new_callable=mock_open) as mock_file, \
+         patch('csv.writer') as mock_writer:
 
-    assert user is not None
-    assert user["email"] == "test@example.com"
-    assert user["name"] == "Test User"
-    assert user["password"] == "password123"
+        mock_exists.return_value = False
+        mock_writer_instance = mock_writer.return_value
 
-def test_get_user_by_email_user_not_found(tmp_path, monkeypatch):
-    """Test when user does not exist in USERS_FILE"""
-    test_file = tmp_path / "users.csv"
-    monkeypatch.setattr(csv_db, "USERS_FILE", str(test_file))
+        csv_db.init_csv()
 
-    # Create file with users but not the target
-    with open(test_file, mode="w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["email", "name", "password"])
-        writer.writerow(["other@example.com", "Other User", "pass456"])
+        mock_exists.assert_any_call(csv_db.USERS_FILE)
+        mock_exists.assert_any_call(csv_db.EXPENSES_FILE)
 
-    user = csv_db.get_user_by_email("missing@example.com")
+        assert mock_file.call_count == 2
+        mock_file.assert_any_call(csv_db.USERS_FILE, mode='w', newline='')
+        mock_file.assert_any_call(csv_db.EXPENSES_FILE, mode='w', newline='')
 
-    assert user is None
+        assert mock_writer_instance.writerow.call_count == 2
+        mock_writer_instance.writerow.assert_any_call(['email', 'name', 'password'])
+        mock_writer_instance.writerow.assert_any_call(['id', 'email', 'amount', 'category', 'date', 'description'])
+
+def test_init_csv_only_users_file_exists():
+    with patch('os.path.exists') as mock_exists, \
+         patch('builtins.open', new_callable=mock_open) as mock_file, \
+         patch('csv.writer') as mock_writer:
+
+        def side_effect(path):
+            if path == csv_db.USERS_FILE:
+                return True
+            return False
+        mock_exists.side_effect = side_effect
+        mock_writer_instance = mock_writer.return_value
+
+        csv_db.init_csv()
+
+        mock_exists.assert_any_call(csv_db.USERS_FILE)
+        mock_exists.assert_any_call(csv_db.EXPENSES_FILE)
+
+        assert mock_file.call_count == 1
+        mock_file.assert_called_once_with(csv_db.EXPENSES_FILE, mode='w', newline='')
+
+        assert mock_writer_instance.writerow.call_count == 1
+        mock_writer_instance.writerow.assert_called_once_with(['id', 'email', 'amount', 'category', 'date', 'description'])
+
+def test_init_csv_only_expenses_file_exists():
+    with patch('os.path.exists') as mock_exists, \
+         patch('builtins.open', new_callable=mock_open) as mock_file, \
+         patch('csv.writer') as mock_writer:
+
+        def side_effect(path):
+            if path == csv_db.EXPENSES_FILE:
+                return True
+            return False
+        mock_exists.side_effect = side_effect
+        mock_writer_instance = mock_writer.return_value
+
+        csv_db.init_csv()
+
+        mock_exists.assert_any_call(csv_db.USERS_FILE)
+        mock_exists.assert_any_call(csv_db.EXPENSES_FILE)
+
+        assert mock_file.call_count == 1
+        mock_file.assert_called_once_with(csv_db.USERS_FILE, mode='w', newline='')
+
+        assert mock_writer_instance.writerow.call_count == 1
+        mock_writer_instance.writerow.assert_called_once_with(['email', 'name', 'password'])
