@@ -9,3 +9,5 @@ email-validator
 pytest
 
 python-dotenv
+Flask-SQLAlchemy
+Flask-JWT-Extended

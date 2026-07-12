@@ -251,33 +251,18 @@
 <div class="w-full border-t border-dashed border-zinc-800/50"></div>
 <div></div>
 </div>
+{% for data in chart_data %}
 <div class="relative group w-full flex flex-col items-center">
-<div class="w-full bg-zinc-800/50 rounded-t h-32 group-hover:bg-primary/40 transition-colors"></div>
-<span class="text-[10px] text-zinc-600 mt-2 font-mono">MON</span>
+    <div class="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-800 text-xs font-mono px-2 py-1 rounded text-zinc-300 pointer-events-none z-10 whitespace-nowrap">₹{{ data.amount }}</div>
+    {% if data.is_today %}
+        <div class="w-full bg-primary rounded-t transition-all group-hover:bg-primary/80" style="height: {{ data.height_pct }}%;"></div>
+        <span class="text-[10px] text-zinc-300 mt-2 font-mono font-bold">{{ data.day }}</span>
+    {% else %}
+        <div class="w-full bg-zinc-800/50 rounded-t group-hover:bg-primary/40 transition-all" style="height: {{ data.height_pct }}%;"></div>
+        <span class="text-[10px] text-zinc-600 mt-2 font-mono">{{ data.day }}</span>
+    {% endif %}
 </div>
-<div class="relative group w-full flex flex-col items-center">
-<div class="w-full bg-zinc-800/50 rounded-t h-48 group-hover:bg-primary/40 transition-colors"></div>
-<span class="text-[10px] text-zinc-600 mt-2 font-mono">TUE</span>
-</div>
-<div class="relative group w-full flex flex-col items-center">
-<div class="w-full bg-primary rounded-t h-56 transition-colors"></div>
-<span class="text-[10px] text-zinc-300 mt-2 font-mono">WED</span>
-</div>
-<div class="relative group w-full flex flex-col items-center">
-<div class="w-full bg-zinc-800/50 rounded-t h-24 group-hover:bg-primary/40 transition-colors"></div>
-<span class="text-[10px] text-zinc-600 mt-2 font-mono">THU</span>
-</div>
-<div class="relative group w-full flex flex-col items-center">
-<div class="w-full bg-zinc-800/50 rounded-t h-40 group-hover:bg-primary/40 transition-colors"></div>
-<span class="text-[10px] text-zinc-600 mt-2 font-mono">FRI</span>
-</div>
-<div class="relative group w-full flex flex-col items-center">
-<div class="w-full bg-zinc-800/50 rounded-t h-36 group-hover:bg-primary/40 transition-colors"></div>
-<span class="text-[10px] text-zinc-600 mt-2 font-mono">SAT</span>
-</div>
-<div class="relative group w-full flex flex-col items-center">
-<div class="w-full bg-zinc-800/50 rounded-t h-52 group-hover:bg-primary/40 transition-colors"></div>
-<span class="text-[10px] text-zinc-600 mt-2 font-mono">SUN</span>
+{% endfor %}
 </div>
 </div>
 </div>
@@ -285,42 +270,21 @@
 <div class="bg-surface-container border border-outline-variant rounded-xl p-6 flex flex-col">
 <h3 class="text-xl font-bold tracking-tight mb-6">Top Categories</h3>
 <div class="space-y-5 flex-1">
-<div class="flex items-center justify-between">
-<div class="flex items-center space-x-3">
-<div class="w-8 h-8 rounded-lg bg-violet-400/10 flex items-center justify-center text-violet-400">
-<span class="material-symbols-outlined text-lg">restaurant</span>
-</div>
-<span class="text-sm font-medium">Food &amp; Dining</span>
-</div>
-<span class="text-sm font-mono font-bold">$420.00</span>
-</div>
-<div class="flex items-center justify-between">
-<div class="flex items-center space-x-3">
-<div class="w-8 h-8 rounded-lg bg-emerald-400/10 flex items-center justify-center text-emerald-400">
-<span class="material-symbols-outlined text-lg">commute</span>
-</div>
-<span class="text-sm font-medium">Transport</span>
-</div>
-<span class="text-sm font-mono font-bold">$185.20</span>
-</div>
-<div class="flex items-center justify-between">
-<div class="flex items-center space-x-3">
-<div class="w-8 h-8 rounded-lg bg-zinc-700/20 flex items-center justify-center text-zinc-400">
-<span class="material-symbols-outlined text-lg">shopping_bag</span>
-</div>
-<span class="text-sm font-medium">Personal Care</span>
-</div>
-<span class="text-sm font-mono font-bold">$92.50</span>
-</div>
-<div class="flex items-center justify-between">
-<div class="flex items-center space-x-3">
-<div class="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
-<span class="material-symbols-outlined text-lg">bolt</span>
-</div>
-<span class="text-sm font-medium">Utilities</span>
-</div>
-<span class="text-sm font-mono font-bold">$210.00</span>
-</div>
+{% if top_categories %}
+    {% for cat in top_categories %}
+    <div class="flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+    <div class="w-8 h-8 rounded-lg {{ cat.bg_class }} flex items-center justify-center {{ cat.color_class }}">
+    <span class="material-symbols-outlined text-lg">{{ cat.icon }}</span>
+    </div>
+    <span class="text-sm font-medium">{{ cat.name }}</span>
+    </div>
+    <span class="text-sm font-mono font-bold">₹{{ cat.total }}</span>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="text-center text-zinc-500 text-sm py-4">No categories data available yet</div>
+{% endif %}
 </div>
 <!-- <button class="mt-6 text-center text-primary text-xs font-bold uppercase tracking-widest hover:underline">View All Categories</button> -->
 </div>
