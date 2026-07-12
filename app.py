@@ -24,9 +24,7 @@ with app.app_context():
 GOOD_CATEGORIES = {'Education', 'Health', 'Utilities', 'Software', 'Personal Care'}
 BAD_CATEGORIES = {'Shopping', 'Entertainment', 'Party/junk food'}
 
-def get_dashboard_stats(user_id):
-    expenses = Expense.query.filter_by(user_id=user_id).all()
-    
+def get_dashboard_stats(expenses):
     if not expenses:
         return {
             'overall_score': 5.0,
@@ -155,7 +153,7 @@ def home():
     user_id = session.get('user_id')
     expenses = Expense.query.filter_by(user_id=user_id).order_by(Expense.date.desc()).all()
     expenses_list = [exp.to_dict() for exp in expenses]
-    stats = get_dashboard_stats(user_id)
+    stats = get_dashboard_stats(expenses)
     
     return render_template('home.html', username=session['user'], expenses=expenses_list, stats=stats)
 
