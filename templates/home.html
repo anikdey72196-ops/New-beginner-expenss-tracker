@@ -216,9 +216,9 @@
 <div class="lg:col-span-2 bg-surface-container border border-outline-variant rounded-xl p-6">
 <div class="flex justify-between items-center mb-8">
 <h3 class="text-xl font-bold tracking-tight">Spending Trends</h3>
-<div class="flex bg-zinc-900 rounded p-1">
-<button class="px-3 py-1 text-xs font-bold bg-zinc-800 text-primary rounded">WEEK</button>
-<button class="px-3 py-1 text-xs font-medium text-zinc-500 hover:text-zinc-300">MONTH</button>
+<div class="flex bg-zinc-900 rounded p-1" id="chart-toggles">
+<button id="btn-week" onclick="updateChart('week')" class="px-3 py-1 text-xs font-bold bg-zinc-800 text-primary rounded">WEEK</button>
+<button id="btn-month" onclick="updateChart('month')" class="px-3 py-1 text-xs font-medium text-zinc-500 hover:text-zinc-300">MONTH</button>
 </div>
 </div>
 <div class="h-64 relative w-full mt-4">
@@ -329,19 +329,47 @@
 </a>
 <!-- Chart.js Initialization -->
 <script>
+    let spendingChart;
+    const chartData = {
+        week: {
+            labels: {{ stats.chart_data.labels | tojson | safe }},
+            data: {{ stats.chart_data.data | tojson | safe }}
+        },
+        month: {
+            labels: {{ stats.monthly_chart_data.labels | tojson | safe }},
+            data: {{ stats.monthly_chart_data.data | tojson | safe }}
+        }
+    };
+
+    function updateChart(view) {
+        if (!spendingChart) return;
+        
+        spendingChart.data.labels = chartData[view].labels;
+        spendingChart.data.datasets[0].data = chartData[view].data;
+        spendingChart.update();
+        
+        const btnWeek = document.getElementById('btn-week');
+        const btnMonth = document.getElementById('btn-month');
+        
+        if (view === 'week') {
+            btnWeek.className = "px-3 py-1 text-xs font-bold bg-zinc-800 text-primary rounded";
+            btnMonth.className = "px-3 py-1 text-xs font-medium text-zinc-500 hover:text-zinc-300";
+        } else {
+            btnMonth.className = "px-3 py-1 text-xs font-bold bg-zinc-800 text-primary rounded";
+            btnWeek.className = "px-3 py-1 text-xs font-medium text-zinc-500 hover:text-zinc-300";
+        }
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
         const ctx = document.getElementById('spendingChart');
         if (ctx) {
-            const rawLabels = {{ stats.chart_data.labels | tojson | safe }};
-            const rawData = {{ stats.chart_data.data | tojson | safe }};
-            
-            new Chart(ctx, {
+            spendingChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: rawLabels,
+                    labels: chartData.week.labels,
                     datasets: [{
                         label: 'Spending',
-                        data: rawData,
+                        data: chartData.week.data,
                         backgroundColor: '#a78bfa',
                         hoverBackgroundColor: '#c4b5fd',
                         borderRadius: 4,

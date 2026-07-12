@@ -62,12 +62,14 @@ def get_dashboard_stats(expenses):
     if not expenses:
         today = datetime.date.today()
         chart_data = {'labels': [(today - datetime.timedelta(days=i)).strftime('%a').upper() for i in range(6, -1, -1)], 'data': [0.0]*7}
+        monthly_chart_data = {'labels': [datetime.date(today.year + (today.month - i - 1) // 12, (today.month - i - 1) % 12 + 1, 1).strftime('%b').upper() for i in range(5, -1, -1)], 'data': [0.0]*6}
         return {
             'overall_score': 5.0,
             'today_score': 50,
             'last_month_total': 0.0,
             'daily_avg_score': 5.0,
             'chart_data': chart_data,
+            'monthly_chart_data': monthly_chart_data,
             'top_categories': []
         }
         
@@ -91,6 +93,13 @@ def get_dashboard_stats(expenses):
         day = today - datetime.timedelta(days=i)
         chart_data['labels'].append(day.strftime('%a').upper())
         chart_data['data'].append(0.0)
+        
+    monthly_chart_data = {'labels': [], 'data': []}
+    for i in range(5, -1, -1):
+        m = (today.month - i - 1) % 12 + 1
+        y = today.year + (today.month - i - 1) // 12
+        monthly_chart_data['labels'].append(datetime.date(y, m, 1).strftime('%b').upper())
+        monthly_chart_data['data'].append(0.0)
         
     category_totals = {}
     
@@ -126,6 +135,12 @@ def get_dashboard_stats(expenses):
             index = 6 - days_ago
             chart_data['data'][index] += amount
             
+        # Monthly Chart Data
+        months_ago = (today.year - exp_date.year) * 12 + (today.month - exp_date.month)
+        if 0 <= months_ago <= 5:
+            index = 5 - months_ago
+            monthly_chart_data['data'][index] += amount
+            
         # Daily tracking for average
         if exp_date not in daily_scores:
             daily_scores[exp_date] = 5.0
@@ -160,6 +175,7 @@ def get_dashboard_stats(expenses):
 
     # Round chart data
     chart_data['data'] = [round(d, 2) for d in chart_data['data']]
+    monthly_chart_data['data'] = [round(d, 2) for d in monthly_chart_data['data']]
 
     return {
         'overall_score': round(overall_score, 1),
@@ -167,6 +183,7 @@ def get_dashboard_stats(expenses):
         'last_month_total': round(last_month_total, 2),
         'daily_avg_score': daily_avg_score,
         'chart_data': chart_data,
+        'monthly_chart_data': monthly_chart_data,
         'top_categories': top_categories
     }
 
