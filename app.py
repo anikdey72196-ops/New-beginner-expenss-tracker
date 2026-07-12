@@ -42,7 +42,7 @@ def get_dashboard_stats(expenses):
         first_of_this_month = today.replace(day=1)
         last_day_last_month = first_of_this_month - datetime.timedelta(days=1)
         first_of_last_month = last_day_last_month.replace(day=1)
-    except:
+    except Exception:
         first_of_last_month = today
         last_day_last_month = today
     
