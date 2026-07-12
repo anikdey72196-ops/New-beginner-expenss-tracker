@@ -1,6 +1,7 @@
 from flask import Flask
 from datetime import timedelta
 import os
+import urllib.parse
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -12,8 +13,14 @@ from expenses import expenses_bp
 def create_app():
     app = Flask(__name__)
     
-    # Configure SQLite database
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///expenses.db'
+    # Configure MySQL database
+    DB_USER = os.environ.get('DB_USER', 'root')
+    DB_PASSWORD_RAW = os.environ.get('DB_PASSWORD', '')
+    DB_PASSWORD = urllib.parse.quote_plus(DB_PASSWORD_RAW)
+    DB_HOST = os.environ.get('DB_HOST', 'localhost')
+    DB_NAME = os.environ.get('DB_NAME', 'expense_tracker')
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     # Configure JWT

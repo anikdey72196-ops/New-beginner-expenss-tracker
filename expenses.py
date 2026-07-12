@@ -7,14 +7,13 @@ from extensions import db
 expenses_bp = Blueprint('expenses', __name__, url_prefix='/expenses')
 
 VALID_CATEGORIES = [
-    'Groceries', 'Leisure', 'Electronics', 'Utilities', 
+    'Groceries', 'Leisure', 'Electronics', 'Utilities', 'Investment',
     'Clothing', 'Health', 'Others'
 ]
 
 @expenses_bp.route('', methods=['POST'])
 @jwt_required()
 def add_expense():
-    """Add a new expense."""
     current_user_id = get_jwt_identity()
     data = request.get_json()
     

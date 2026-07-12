@@ -1,5 +1,6 @@
 import os
 import datetime
+import urllib.parse
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -12,25 +13,50 @@ from models import User, Expense
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(24))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///expenses.db'
+
+DB_USER = os.environ.get('DB_USER', 'root')
+DB_PASSWORD_RAW = os.environ.get('DB_PASSWORD', '')
+DB_PASSWORD = urllib.parse.quote_plus(DB_PASSWORD_RAW)
+DB_HOST = os.environ.get('DB_HOST', 'localhost')
+DB_NAME = os.environ.get('DB_NAME', 'expense_tracker')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 with app.app_context():
     db.create_all()
 
-GOOD_CATEGORIES = {'Education', 'Health', 'Utilities', 'Software', 'Personal Care'}
+GOOD_CATEGORIES = {'Education', 'Health', 'Utilities', 'Software', 'Personal Care','Investment'}
 BAD_CATEGORIES = {'Shopping', 'Entertainment', 'Party/junk food'}
+
+CATEGORY_META = {
+    'Food & Dining': {'icon': 'restaurant', 'color_class': 'text-violet-400', 'bg_class': 'bg-violet-400/10'},
+    'Transport': {'icon': 'commute', 'color_class': 'text-emerald-400', 'bg_class': 'bg-emerald-400/10'},
+    'Shopping': {'icon': 'shopping_bag', 'color_class': 'text-pink-400', 'bg_class': 'bg-pink-400/10'},
+    'Utilities': {'icon': 'bolt', 'color_class': 'text-primary', 'bg_class': 'bg-primary/20'},
+    'Health': {'icon': 'medical_services', 'color_class': 'text-red-400', 'bg_class': 'bg-red-400/10'},
+    'Entertainment': {'icon': 'movie', 'color_class': 'text-yellow-400', 'bg_class': 'bg-yellow-400/10'},
+    'Education': {'icon': 'school', 'color_class': 'text-blue-400', 'bg_class': 'bg-blue-400/10'},
+    'Software': {'icon': 'code', 'color_class': 'text-cyan-400', 'bg_class': 'bg-cyan-400/10'},
+    'Personal Care': {'icon': 'spa', 'color_class': 'text-teal-400', 'bg_class': 'bg-teal-400/10'},
+    'Investment': {'icon': 'trending_up', 'color_class': 'text-green-400', 'bg_class': 'bg-green-400/10'},
+    'Other': {'icon': 'category', 'color_class': 'text-zinc-400', 'bg_class': 'bg-zinc-700/20'},
+}
 
 def get_dashboard_stats(user_id):
     expenses = Expense.query.filter_by(user_id=user_id).all()
     
     if not expenses:
+        today = datetime.date.today()
+        chart_data = {'labels': [(today - datetime.timedelta(days=i)).strftime('%a').upper() for i in range(6, -1, -1)], 'data': [0.0]*7}
         return {
             'overall_score': 5.0,
             'today_score': 50,
             'last_month_total': 0.0,
-            'daily_avg_score': 5.0
+            'daily_avg_score': 5.0,
+            'chart_data': chart_data,
+            'top_categories': []
         }
         
     overall_score = 5.0
@@ -48,27 +74,45 @@ def get_dashboard_stats(user_id):
     
     daily_scores = {}
     
+    chart_data = {'labels': [], 'data': []}
+    for i in range(6, -1, -1):
+        day = today - datetime.timedelta(days=i)
+        chart_data['labels'].append(day.strftime('%a').upper())
+        chart_data['data'].append(0.0)
+        
+    category_totals = {}
+    
     for exp in expenses:
         category = exp.category
         amount = exp.amount
         exp_date = exp.date
             
-        # Overall score logic (+1 good, -2 bad)
+        
         if category in GOOD_CATEGORIES:
             overall_score += 1
         elif category in BAD_CATEGORIES:
             overall_score -= 2
             
-        # Today's score (starts at 50, +10 good, -20 bad, out of 100)
+        
         if exp_date == today:
             if category in GOOD_CATEGORIES:
                 today_score += 10
             elif category in BAD_CATEGORIES:
                 today_score -= 20
                 
-        # Last month total expenses
+        
         if first_of_last_month <= exp_date <= last_day_last_month:
             last_month_total += amount
+            
+        
+        if exp_date >= first_of_this_month:
+            category_totals[category] = category_totals.get(category, 0) + amount
+            
+        # Chart Data
+        days_ago = (today - exp_date).days
+        if 0 <= days_ago <= 6:
+            index = 6 - days_ago
+            chart_data['data'][index] += amount
             
         # Daily tracking for average
         if exp_date not in daily_scores:
@@ -88,12 +132,30 @@ def get_dashboard_stats(user_id):
         daily_avg_score = round(avg, 1)
     else:
         daily_avg_score = 5.0
+        
+    # Process Top Categories
+    sorted_cats = sorted(category_totals.items(), key=lambda x: x[1], reverse=True)[:4]
+    top_categories = []
+    for cat, total in sorted_cats:
+        meta = CATEGORY_META.get(cat, CATEGORY_META['Other'])
+        top_categories.append({
+            'name': cat,
+            'amount': round(total, 2),
+            'icon': meta['icon'],
+            'color_class': meta['color_class'],
+            'bg_class': meta['bg_class']
+        })
+
+    # Round chart data
+    chart_data['data'] = [round(d, 2) for d in chart_data['data']]
 
     return {
         'overall_score': round(overall_score, 1),
         'today_score': today_score,
         'last_month_total': round(last_month_total, 2),
-        'daily_avg_score': daily_avg_score
+        'daily_avg_score': daily_avg_score,
+        'chart_data': chart_data,
+        'top_categories': top_categories
     }
 
 
@@ -194,7 +256,8 @@ def addexpense():
         flash("Expense added successfully!", "success")
         return redirect(url_for('home'))
         
-    return render_template("add_expense.html")
+    today_date = datetime.date.today().strftime('%Y-%m-%d')
+    return render_template('add_expense.html', today_date=today_date)
 
 @app.route('/edit_expense/<int:id>', methods=['GET', 'POST'])
 def edit_expense(id):

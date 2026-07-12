@@ -8,7 +8,6 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 @auth_bp.route('/signup', methods=['POST'])
 def signup():
-    """Sign up as a new user."""
     data = request.get_json()
     
     if not data or not data.get('username') or not data.get('password'):
