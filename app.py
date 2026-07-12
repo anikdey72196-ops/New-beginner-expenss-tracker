@@ -21,10 +21,19 @@ DB_PASSWORD_RAW = os.environ.get('DB_PASSWORD', '')
 DB_PASSWORD = urllib.parse.quote_plus(DB_PASSWORD_RAW)
 DB_HOST = os.environ.get('DB_HOST', 'localhost')
 DB_NAME = os.environ.get('DB_NAME', 'expense_tracker')
-DB_PORT = os.environ.get('DB_PORT', '3306') # <-- Add this line
+DB_PORT = os.environ.get('DB_PORT', '3306')
 db_uri = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-if os.path.exists('/etc/ssl/certs/ca-certificates.crt'):
-    db_uri += '?ssl_ca=/etc/ssl/certs/ca-certificates.crt'
+
+ca_cert_paths = [
+    '/etc/ssl/certs/ca-certificates.crt',
+    '/etc/pki/tls/certs/ca-bundle.crt',
+    '/etc/ssl/ca-bundle.pem',
+    '/etc/pki/tls/cacert.pem',
+    '/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem'
+]
+ca_path = next((p for p in ca_cert_paths if os.path.exists(p)), None)
+if ca_path and DB_HOST != 'localhost':
+    db_uri += f'?ssl_ca={ca_path}'
 app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
