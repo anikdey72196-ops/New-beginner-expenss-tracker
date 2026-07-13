@@ -24,9 +24,13 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
     if DB_HOST != 'localhost' and DB_HOST != '127.0.0.1':
         import ssl
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
+        ca_path = '/etc/pki/tls/certs/ca-bundle.crt'
+        if not os.path.exists(ca_path):
+            import certifi
+            ca_path = certifi.where()
+        ctx = ssl.create_default_context(cafile=ca_path)
+        ctx.check_hostname = True
+        ctx.verify_mode = ssl.CERT_REQUIRED
         app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'connect_args': {'ssl': ctx}}
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
