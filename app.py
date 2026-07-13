@@ -176,6 +176,12 @@ def get_dashboard_stats(expenses):
     # Round chart data
     chart_data['data'] = [round(d, 2) for d in chart_data['data']]
     monthly_chart_data['data'] = [round(d, 2) for d in monthly_chart_data['data']]
+    
+    category_chart_data = {'labels': [], 'data': []}
+    # Sort categories by total for the chart
+    for cat, total in sorted(category_totals.items(), key=lambda x: x[1], reverse=True):
+        category_chart_data['labels'].append(cat)
+        category_chart_data['data'].append(round(total, 2))
 
     return {
         'overall_score': round(overall_score, 1),
@@ -184,6 +190,7 @@ def get_dashboard_stats(expenses):
         'daily_avg_score': daily_avg_score,
         'chart_data': chart_data,
         'monthly_chart_data': monthly_chart_data,
+        'category_chart_data': category_chart_data,
         'top_categories': top_categories
     }
 

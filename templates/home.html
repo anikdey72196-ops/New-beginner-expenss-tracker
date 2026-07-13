@@ -336,17 +336,81 @@
             data: {{ stats.chart_data.data | tojson | safe }}
         },
         month: {
-            labels: {{ stats.monthly_chart_data.labels | tojson | safe }},
-            data: {{ stats.monthly_chart_data.data | tojson | safe }}
+            labels: {{ stats.category_chart_data.labels | tojson | safe }},
+            data: {{ stats.category_chart_data.data | tojson | safe }}
         }
     };
 
     function updateChart(view) {
-        if (!spendingChart) return;
+        const ctx = document.getElementById('spendingChart');
+        if (!ctx) return;
         
-        spendingChart.data.labels = chartData[view].labels;
-        spendingChart.data.datasets[0].data = chartData[view].data;
-        spendingChart.update();
+        if (spendingChart) {
+            spendingChart.destroy();
+        }
+
+        const type = view === 'week' ? 'bar' : 'doughnut';
+        
+        const backgroundColors = view === 'week' 
+            ? '#a78bfa' 
+            : ['#a78bfa', '#f472b6', '#38bdf8', '#4ade80', '#fbbf24', '#f87171', '#2dd4bf', '#818cf8', '#c084fc', '#fb923c', '#9ca3af', '#60a5fa'];
+
+        const scales = view === 'week' ? {
+            x: {
+                grid: { display: false, drawBorder: false },
+                ticks: { color: '#71717a', font: { family: 'Geist', size: 10 } }
+            },
+            y: {
+                grid: { color: 'rgba(39, 39, 42, 0.5)', drawBorder: false, borderDash: [5, 5] },
+                ticks: { display: false }
+            }
+        } : {
+            x: { display: false },
+            y: { display: false }
+        };
+        
+        spendingChart = new Chart(ctx, {
+            type: type,
+            data: {
+                labels: chartData[view].labels,
+                datasets: [{
+                    label: 'Spending',
+                    data: chartData[view].data,
+                    backgroundColor: backgroundColors,
+                    hoverBackgroundColor: view === 'week' ? '#c4b5fd' : backgroundColors,
+                    borderRadius: view === 'week' ? 4 : 0,
+                    borderSkipped: false,
+                    barPercentage: 0.6,
+                    borderWidth: view === 'month' ? 1 : 0,
+                    borderColor: '#18181b'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: view === 'month' ? '70%' : undefined,
+                plugins: {
+                    legend: { 
+                        display: view === 'month',
+                        position: 'right',
+                        labels: { color: '#a1a1aa', font: { family: 'Geist', size: 10 } }
+                    },
+                    tooltip: {
+                        backgroundColor: '#18181b',
+                        titleColor: '#a1a1aa',
+                        bodyColor: '#fafafa',
+                        padding: 12,
+                        displayColors: view === 'month',
+                        callbacks: {
+                            label: function(context) {
+                                return '₹' + context.raw;
+                            }
+                        }
+                    }
+                },
+                scales: view === 'week' ? scales : undefined
+            }
+        });
         
         const btnWeek = document.getElementById('btn-week');
         const btnMonth = document.getElementById('btn-month');
@@ -361,53 +425,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", function() {
-        const ctx = document.getElementById('spendingChart');
-        if (ctx) {
-            spendingChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: chartData.week.labels,
-                    datasets: [{
-                        label: 'Spending',
-                        data: chartData.week.data,
-                        backgroundColor: '#a78bfa',
-                        hoverBackgroundColor: '#c4b5fd',
-                        borderRadius: 4,
-                        borderSkipped: false,
-                        barPercentage: 0.6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#18181b',
-                            titleColor: '#a1a1aa',
-                            bodyColor: '#fafafa',
-                            padding: 12,
-                            displayColors: false,
-                            callbacks: {
-                                label: function(context) {
-                                    return '₹' + context.parsed.y;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: { display: false, drawBorder: false },
-                            ticks: { color: '#71717a', font: { family: 'Geist', size: 10 } }
-                        },
-                        y: {
-                            grid: { color: 'rgba(39, 39, 42, 0.5)', drawBorder: false, borderDash: [5, 5] },
-                            ticks: { display: false }
-                        }
-                    }
-                }
-            });
-        }
+        updateChart('week');
     });
 </script>
 </body></html>
