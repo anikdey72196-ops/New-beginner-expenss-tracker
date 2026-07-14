@@ -38,8 +38,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 csrf = CSRFProtect(app)
 db.init_app(app)
 
-with app.app_context():
-    db.create_all()
+try:
+    with app.app_context():
+        db.create_all()
+except Exception as e:
+    print(f"Error during db.create_all(): {e}")
 
 GOOD_CATEGORIES = {'Education', 'Health', 'Utilities', 'Software', 'Personal Care','Investment'}
 BAD_CATEGORIES = {'Shopping', 'Entertainment', 'Party/junk food'}
