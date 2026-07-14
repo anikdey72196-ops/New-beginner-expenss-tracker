@@ -38,8 +38,6 @@ if DB_HOST != 'localhost' and DB_HOST != '127.0.0.1' and not os.environ.get('PYT
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         'connect_args': {
             'ssl': {
-                'ssl_cert_reqs': ssl.CERT_REQUIRED,
-                'check_hostname': True,
                 'ca': ca_path
             }
         }
