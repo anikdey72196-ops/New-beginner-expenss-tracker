@@ -10,6 +10,9 @@ def client():
     flask_app.config['WTF_CSRF_ENABLED'] = False
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     
+    # Also override ENGINE_OPTIONS for testing with sqlite
+    flask_app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {}
+
     # Setup database
     with flask_app.app_context():
         db.create_all()

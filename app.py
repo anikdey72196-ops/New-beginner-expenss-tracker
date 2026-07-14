@@ -22,27 +22,42 @@ DB_PASSWORD = urllib.parse.quote_plus(DB_PASSWORD_RAW)
 DB_HOST = os.environ.get('DB_HOST', 'localhost')
 DB_NAME = os.environ.get('DB_NAME', 'expense_tracker')
 DB_PORT = os.environ.get('DB_PORT', '3306')
-db_uri = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+
+if os.environ.get('PYTEST_CURRENT_TEST'):
+    db_uri = 'sqlite:///:memory:'
+else:
+    db_uri = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'connect_args': {
-        'ssl': {
-            'ssl_cert_reqs': ssl.CERT_NONE,
-            'check_hostname': False
+if DB_HOST != 'localhost' and DB_HOST != '127.0.0.1' and not os.environ.get('PYTEST_CURRENT_TEST'):
+    ca_path = '/etc/pki/tls/certs/ca-bundle.crt'
+    if not os.path.exists(ca_path):
+        # Fallback for local testing or different OS if needed
+        import certifi
+        ca_path = certifi.where()
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'connect_args': {
+            'ssl': {
+                'ssl_cert_reqs': ssl.CERT_REQUIRED,
+                'check_hostname': True,
+                'ca': ca_path
+            }
         }
     }
-}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 csrf = CSRFProtect(app)
 db.init_app(app)
 
-try:
-    with app.app_context():
-        db.create_all()
-except Exception as e:
-    print(f"Error during db.create_all(): {e}")
+# Ensure app.config overrides are applied before create_all
+with app.app_context():
+    # If we are testing or running pytest, skip creating db here
+    # to avoid connecting to the default mysql db
+    if not os.environ.get('PYTEST_CURRENT_TEST') and not app.config.get('TESTING'):
+        try:
+            db.create_all()
+        except Exception as e:
+            print(f"Error during db.create_all(): {e}")
 
 GOOD_CATEGORIES = {'Education', 'Health', 'Utilities', 'Software', 'Personal Care','Investment'}
 BAD_CATEGORIES = {'Shopping', 'Entertainment', 'Party/junk food'}
@@ -73,6 +88,7 @@ def get_dashboard_stats(expenses):
             'daily_avg_score': 5.0,
             'chart_data': chart_data,
             'monthly_chart_data': monthly_chart_data,
+            'category_chart_data': {'labels': [], 'data': []},
             'top_categories': []
         }
         
