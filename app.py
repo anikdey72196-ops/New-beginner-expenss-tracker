@@ -223,21 +223,26 @@ def register():
     form = RegistrationForm()
     if request.method == 'POST':
         if form.validate_on_submit():
-            # Store user in database
-            existing_user = User.query.filter_by(username=form.username.data).first()
-            if existing_user:
-                flash("Username already exists", "danger")
+            try:
+                # Store user in database
+                existing_user = User.query.filter_by(username=form.username.data).first()
+                if existing_user:
+                    flash("Username already exists", "danger")
+                    return redirect(url_for('register'))
+                
+                hashed_password = generate_password_hash(form.password.data)
+                new_user = User(
+                    username=form.username.data,
+                    password_hash=hashed_password
+                )
+                db.session.add(new_user)
+                db.session.commit()
+                flash("Registered successfully!", "success")
+                return redirect(url_for('login'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Database Error: {str(e)}", "danger")
                 return redirect(url_for('register'))
-            
-            hashed_password = generate_password_hash(form.password.data)
-            new_user = User(
-                username=form.username.data,
-                password_hash=hashed_password
-            )
-            db.session.add(new_user)
-            db.session.commit()
-            flash("Registered successfully!", "success")
-            return redirect(url_for('login'))
     return render_template('register.html', form=form)
     
 @app.route('/login', methods=['GET', 'POST'])
@@ -245,19 +250,23 @@ def login():
     form = LoginForm()
     if request.method == 'POST':
         if form.validate_on_submit():
-            # Find the user by their username
-            user = User.query.filter_by(username=form.username.data).first()
-            
-            # If the user doesn't exist, or password doesn't match
-            if not user or not check_password_hash(user.password_hash, form.password.data):
-                flash("Invalid credentials", "danger")
+            try:
+                # Find the user by their username
+                user = User.query.filter_by(username=form.username.data).first()
+                
+                # If the user doesn't exist, or password doesn't match
+                if not user or not check_password_hash(user.password_hash, form.password.data):
+                    flash("Invalid credentials", "danger")
+                    return redirect(url_for('login'))
+                
+                # If successful
+                session['user_id'] = user.id
+                session['user'] = user.username
+                flash("Logged in successfully!", "success")
+                return redirect(url_for('home'))
+            except Exception as e:
+                flash(f"Database Error: {str(e)}", "danger")
                 return redirect(url_for('login'))
-            
-            # If successful
-            session['user_id'] = user.id
-            session['user'] = user.username
-            flash("Logged in successfully!", "success")
-            return redirect(url_for('home'))
     return render_template('login.html', form=form)
 
 @app.route('/home', methods=['GET'])
