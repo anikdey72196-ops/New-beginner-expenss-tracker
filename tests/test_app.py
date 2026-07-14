@@ -1,3 +1,5 @@
+import os
+os.environ['PYTEST_CURRENT_TEST'] = 'true'
 import pytest
 from app import app as flask_app
 from extensions import db
