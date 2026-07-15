@@ -8,6 +8,7 @@ load_dotenv()
 from flask import Flask, render_template, redirect, session, request, url_for, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf.csrf import CSRFProtect
+from sqlalchemy.pool import NullPool
 from form import RegistrationForm, LoginForm
 from extensions import db
 from models import User, Expense
@@ -35,7 +36,9 @@ if DB_HOST != 'localhost' and DB_HOST != '127.0.0.1' and not os.environ.get('PYT
         # Fallback for local testing or different OS if needed
         import certifi
         ca_path = certifi.where()
+
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'poolclass': NullPool,
         'connect_args': {
             'ssl': {
                 'ca': ca_path
