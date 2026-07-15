@@ -22,3 +22,13 @@
 **Vulnerability:** The application was catching database connection exceptions during user registration and login, and exposing the internal details `DB_HOST`, `DB_PORT`, and the raw exception string directly to the user via UI flash messages. This is a critical information disclosure.
 **Learning:** Exposing raw exception strings or database connection details to end users leaks sensitive infrastructure information that an attacker can use for reconnaissance (e.g. knowing internal network structure or database versions/errors).
 **Prevention:** Never expose internal exception details, stack traces, or configuration variables in user-facing error messages. Always log the detailed error internally (`app.logger.error()`) and present a safe, generic error message (e.g., "An unexpected error occurred") to the user.
+
+## 2026-07-15 - [Fix] Incomplete CSRF Protection on Delete Action
+**Vulnerability:** The `delete_expense` endpoint was previously updated to use POST methods to prevent CSRF, but the frontend still used a GET link. This caused the UI to break with a 405 error and the delete action to remain broken and not correctly protected with a CSRF token in the UI.
+**Learning:** When changing the allowed HTTP methods of an endpoint (e.g. GET -> POST) for security reasons like CSRF protection, you must also update all frontend UI elements that interact with that endpoint to use the correct method (e.g. replacing an `<a>` tag with a `<form method="POST">`) and pass the CSRF token.
+**Prevention:** When resolving backend vulnerabilities that change request methods, always search the codebase (including frontend templates) for references to the endpoint and update them accordingly. Write tests that cover the UI interaction flow.
+
+## 2026-07-15 - [Enhancement] Security Headers and Session Cookie Flags
+**Vulnerability:** The application was missing basic security headers (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection) and secure session cookie flags (HttpOnly, SameSite).
+**Learning:** Implementing security headers and secure cookie flags adds a layer of defense-in-depth against common web vulnerabilities like Clickjacking and XSS.
+**Prevention:** By default, configure web frameworks to set these headers and cookie attributes, while being mindful of environment constraints (e.g., omitting Secure for local HTTP development).
