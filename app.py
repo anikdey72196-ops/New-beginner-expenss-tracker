@@ -239,7 +239,8 @@ def register():
                 return redirect(url_for('login'))
             except Exception as e:
                 db.session.rollback()
-                flash(f"Database Error on {DB_HOST}:{DB_PORT}: {str(e)}", "danger")
+                app.logger.error(f"Database Error on {DB_HOST}:{DB_PORT}: {str(e)}")
+                flash("An unexpected error occurred during registration. Please try again later.", "danger")
                 return redirect(url_for('register'))
     return render_template('register.html', form=form)
     
@@ -263,7 +264,8 @@ def login():
                 flash("Logged in successfully!", "success")
                 return redirect(url_for('home'))
             except Exception as e:
-                flash(f"Database Error on {DB_HOST}:{DB_PORT}: {str(e)}", "danger")
+                app.logger.error(f"Database Error on {DB_HOST}:{DB_PORT}: {str(e)}")
+                flash("An unexpected error occurred during login. Please try again later.", "danger")
                 return redirect(url_for('login'))
     return render_template('login.html', form=form)
 
