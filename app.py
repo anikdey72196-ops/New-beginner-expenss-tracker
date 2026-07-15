@@ -47,8 +47,19 @@ if DB_HOST != 'localhost' and DB_HOST != '127.0.0.1' and not os.environ.get('PYT
     }
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Session security
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
 csrf = CSRFProtect(app)
 db.init_app(app)
+
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    return response
 
 # Ensure app.config overrides are applied before create_all
 with app.app_context():
