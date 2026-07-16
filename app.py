@@ -308,8 +308,16 @@ def addexpense():
         amount = request.form.get('amount')
         category = request.form.get('category')
         date_str = request.form.get('date') 
-        description = request.form.get('description')
+        description = request.form.get('description', '')
         
+        if category and len(category) > 50:
+            flash("Category is too long", "danger")
+            return redirect(url_for('addexpense'))
+
+        if description and len(description) > 255:
+            flash("Description is too long", "danger")
+            return redirect(url_for('addexpense'))
+
         try:
             amount_val = float(amount)
             if math.isnan(amount_val) or math.isinf(amount_val) or amount_val < 0 or amount_val > 1000000000:
@@ -355,8 +363,16 @@ def edit_expense(id):
         amount = request.form.get('amount')
         category = request.form.get('category')
         date_str = request.form.get('date')
-        description = request.form.get('description')
+        description = request.form.get('description', '')
         
+        if category and len(category) > 50:
+            flash("Category is too long", "danger")
+            return redirect(url_for('edit_expense', id=id))
+
+        if description and len(description) > 255:
+            flash("Description is too long", "danger")
+            return redirect(url_for('edit_expense', id=id))
+
         try:
             amount_val = float(amount)
             if math.isnan(amount_val) or math.isinf(amount_val) or amount_val < 0 or amount_val > 1000000000:
