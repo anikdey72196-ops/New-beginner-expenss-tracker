@@ -32,3 +32,8 @@
 **Vulnerability:** The application was missing basic security headers (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection) and secure session cookie flags (HttpOnly, SameSite).
 **Learning:** Implementing security headers and secure cookie flags adds a layer of defense-in-depth against common web vulnerabilities like Clickjacking and XSS.
 **Prevention:** By default, configure web frameworks to set these headers and cookie attributes, while being mindful of environment constraints (e.g., omitting Secure for local HTTP development).
+
+## 2026-07-16 - [Fix] Application-Layer Boundary Checking for DoS and DataErrors
+**Vulnerability:** The application was missing strict length validation on user inputs (username, password) before hitting the database or expensive hashing algorithms. Extremely long inputs could trigger unhandled database `DataError` exceptions or lead to Denial of Service (DoS) attacks via CPU exhaustion when hashing overly long passwords.
+**Learning:** Application-layer boundary checking is crucial. Database schema constraints (like `VARCHAR(80)`) will cause fatal errors if breached, and algorithms like bcrypt scale non-linearly with input length.
+**Prevention:** Always enforce explicit length constraints (e.g. using `Length(max=...)` validators in WTForms and `len() > max_len` checks in API routes) for usernames, passwords, and text fields to prevent DoS and DB crashes.

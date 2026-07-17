@@ -181,3 +181,16 @@ def test_add_invalid_amount(client):
         user = User.query.filter_by(username="testuser_amt").first()
         expenses = Expense.query.filter_by(user_id=user.id).all()
         assert len(expenses) == 0
+
+def test_register_long_username(client):
+    # Should not crash with a 500 error if username is > 80 chars
+    long_username = "a" * 81
+    response = client.post("/register", data={
+        "username": long_username,
+        "password": "testpassword",
+        "submit": "Sign Up"
+    })
+
+    # Validation failed in WTForms, should render template again (200 OK) with errors
+    assert response.status_code == 200
+    assert b"Field cannot be longer than 80 characters" in response.data or b"Invalid" in response.data or b"Register" in response.data
