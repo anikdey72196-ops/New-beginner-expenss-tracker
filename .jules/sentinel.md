@@ -32,3 +32,8 @@
 **Vulnerability:** The application was missing basic security headers (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection) and secure session cookie flags (HttpOnly, SameSite).
 **Learning:** Implementing security headers and secure cookie flags adds a layer of defense-in-depth against common web vulnerabilities like Clickjacking and XSS.
 **Prevention:** By default, configure web frameworks to set these headers and cookie attributes, while being mindful of environment constraints (e.g., omitting Secure for local HTTP development).
+
+## 2026-07-18 - [Fix] Inadequate Password and Username Length Validation
+**Vulnerability:** The application was not enforcing length constraints on user inputs such as usernames and passwords. This allows attackers to send extremely long inputs that can either cause unexpected database errors (DataError on `String(80)`) or lead to a Denial of Service (DoS) attack by forcing the server to hash extremely long passwords, consuming disproportionate CPU time.
+**Learning:** Application-layer boundary checks (e.g. Length validators) must be in place before processing expensive operations like password hashing or database commits, as relying on database limits will still waste CPU or trigger unhandled app exceptions.
+**Prevention:** Always enforce strict length limits on inputs matching the database schema and security bounds, particularly for strings that are passed to expensive cryptographic hashing functions (like `werkzeug.security.generate_password_hash`).
