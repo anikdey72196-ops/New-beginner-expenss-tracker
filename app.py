@@ -37,6 +37,14 @@ if DB_HOST != 'localhost' and DB_HOST != '127.0.0.1' and not os.environ.get('PYT
         import certifi
         ca_path = certifi.where()
 
+    try:
+        import shutil
+        tmp_ca_path = '/tmp/ca-bundle.crt'
+        shutil.copy2(ca_path, tmp_ca_path)
+        ca_path = tmp_ca_path
+    except Exception as e:
+        print(f"Error copying CA bundle to /tmp: {e}")
+
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         'poolclass': NullPool,
         'connect_args': {

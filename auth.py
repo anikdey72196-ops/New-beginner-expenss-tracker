@@ -10,19 +10,23 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 def signup():
     data = request.get_json()
     
-    if not data or not data.get('username') or not data.get('password'):
+    if not data or not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload"}), 400
+
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
         return jsonify({"error": "Username and password are required"}), 400
 
-    if len(data.get('username')) > 80 or len(data.get('password')) > 72:
-        return jsonify({"error": "Username must be <= 80 characters and password <= 72 characters"}), 400
-    username = data.get('username', '')
-    password = data.get('password', '')
+    if not isinstance(username, str) or not isinstance(password, str):
+        return jsonify({"error": "Username and password must be strings"}), 400
 
     if len(username) < 3 or len(username) > 80:
         return jsonify({"error": "Username must be between 3 and 80 characters."}), 400
 
-    if len(password) < 8 or len(password) > 128:
-        return jsonify({"error": "Password must be between 8 and 128 characters."}), 400
+    if len(password) < 8 or len(password) > 72:
+        return jsonify({"error": "Password must be between 8 and 72 characters."}), 400
     
     if User.query.filter_by(username=username).first():
         return jsonify({"error": "Username already exists"}), 400
@@ -40,10 +44,19 @@ def login():
     """Authenticate and generate JWT."""
     data = request.get_json()
     
-    if not data or not data.get('username') or not data.get('password'):
+    if not data or not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload"}), 400
+
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
         return jsonify({"error": "Username and password are required"}), 400
         
-    if len(data.get('username')) > 80 or len(data.get('password')) > 72:
+    if not isinstance(username, str) or not isinstance(password, str):
+        return jsonify({"error": "Invalid username or password"}), 401
+
+    if len(username) > 80 or len(password) > 72:
         return jsonify({"error": "Invalid username or password"}), 401
 
     user = User.query.filter_by(username=data['username']).first()
