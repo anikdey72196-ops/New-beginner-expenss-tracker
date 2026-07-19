@@ -20,9 +20,14 @@ def create_app():
     DB_HOST = os.environ.get('DB_HOST', 'localhost')
     DB_NAME = os.environ.get('DB_NAME', 'expense_tracker')
     DB_PORT = os.environ.get('DB_PORT', '3306') # <-- Add this line
-    db_uri = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+
+    if os.environ.get('PYTEST_CURRENT_TEST'):
+        db_uri = 'sqlite:///:memory:'
+    else:
+        db_uri = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+
     app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
-    if DB_HOST != 'localhost' and DB_HOST != '127.0.0.1':
+    if DB_HOST != 'localhost' and DB_HOST != '127.0.0.1' and not os.environ.get('PYTEST_CURRENT_TEST'):
         import ssl
         ca_path = '/etc/pki/tls/certs/ca-bundle.crt'
         if not os.path.exists(ca_path):

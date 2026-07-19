@@ -162,6 +162,59 @@ def test_edit_delete_expense_authenticated(client):
         deleted_expense = Expense.query.get(expense_id)
         assert deleted_expense is None
 
+def test_register_oversized_payloads(client):
+    # Test oversized username
+    response = client.post("/register", data={
+        "username": "a" * 81,
+        "password": "validpassword",
+        "submit": "Sign Up"
+    })
+    assert response.status_code == 200 # Form validation fails and re-renders form
+    assert b"Username must be between 3 and 80 characters." in response.data
+
+    # Test oversized password
+    response = client.post("/register", data={
+        "username": "validuser",
+        "password": "a" * 129,
+        "submit": "Sign Up"
+    })
+    assert response.status_code == 200
+    assert b"Password must be between 8 and 128 characters." in response.data
+
+def test_api_signup_oversized_payloads():
+    import os
+    # create_app() reads PYTEST_CURRENT_TEST and then DB_* env vars to construct db_uri.
+    # Let's just override it immediately after creation.
+    os.environ['PYTEST_CURRENT_TEST'] = 'true'
+    from expense_api import create_app
+    api_app = create_app()
+    api_app.config['TESTING'] = True
+    api_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    api_app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {}
+
+    with api_app.app_context():
+        db.create_all()
+
+    with api_app.test_client() as api_client:
+        # Test oversized username in API
+        response = api_client.post("/auth/signup", json={
+            "username": "a" * 81,
+            "password": "validpassword"
+        })
+        assert response.status_code == 400
+        assert response.get_json()["error"] == "Username must be between 3 and 80 characters."
+
+        # Test oversized password in API
+        response = api_client.post("/auth/signup", json={
+            "username": "validuser",
+            "password": "a" * 129
+        })
+        assert response.status_code == 400
+        assert response.get_json()["error"] == "Password must be between 8 and 128 characters."
+
+    with api_app.app_context():
+        db.drop_all()
+
 def test_add_invalid_amount(client):
     client.post("/register", data={"username": "testuser_amt", "password": "testpassword", "submit": "Sign Up"})
     client.post("/login", data={"username": "testuser_amt", "password": "testpassword", "submit": "Sign In"})
