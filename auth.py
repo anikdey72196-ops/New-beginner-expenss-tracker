@@ -12,8 +12,17 @@ def signup():
     
     if not data or not data.get('username') or not data.get('password'):
         return jsonify({"error": "Username and password are required"}), 400
+
+    username = data.get('username', '')
+    password = data.get('password', '')
+
+    if len(username) < 3 or len(username) > 80:
+        return jsonify({"error": "Username must be between 3 and 80 characters."}), 400
+
+    if len(password) < 8 or len(password) > 128:
+        return jsonify({"error": "Password must be between 8 and 128 characters."}), 400
     
-    if User.query.filter_by(username=data['username']).first():
+    if User.query.filter_by(username=username).first():
         return jsonify({"error": "Username already exists"}), 400
         
     hashed_password = generate_password_hash(data['password'])
