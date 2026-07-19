@@ -3,6 +3,8 @@ from wtforms import StringField,PasswordField,SubmitField
 from wtforms.validators import DataRequired,Email,Length
 
 class RegistrationForm(FlaskForm):
+    username=StringField('username',validators=[DataRequired(), Length(max=80)])
+    password=PasswordField('password',validators=[DataRequired(), Length(max=72)])
     username=StringField('username',validators=[
         DataRequired(),
         Length(min=3, max=80, message="Username must be between 3 and 80 characters.")
@@ -14,6 +16,6 @@ class RegistrationForm(FlaskForm):
     submit=SubmitField('Register')
 
 class LoginForm(FlaskForm):
-    username=StringField('username',validators=[DataRequired()])
-    password=PasswordField('password',validators=[DataRequired()])
+    username=StringField('username',validators=[DataRequired(), Length(max=80)])
+    password=PasswordField('password',validators=[DataRequired(), Length(max=72)])
     submit=SubmitField('Sign In')
