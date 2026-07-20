@@ -18,8 +18,16 @@ def add_expense():
     current_user_id = get_jwt_identity()
     data = request.get_json()
     
-    if not data or not data.get('amount') or not data.get('category') or not data.get('date'):
+    if not data or not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload"}), 400
+    if not data.get('amount') or not data.get('category') or not data.get('date'):
         return jsonify({"error": "Amount, category, and date are required"}), 400
+
+    if data.get('description') and not isinstance(data['description'], str):
+        return jsonify({"error": "Description must be a string"}), 400
+
+    if data.get('description') and len(data['description']) > 255:
+        return jsonify({"error": "Description cannot exceed 255 characters"}), 400
         
     if data['category'] not in VALID_CATEGORIES:
         return jsonify({"error": f"Category must be one of: {', '.join(VALID_CATEGORIES)}"}), 400
@@ -100,8 +108,8 @@ def update_expense(expense_id):
         return jsonify({"error": "Expense not found"}), 404
         
     data = request.get_json()
-    if not data:
-        return jsonify({"error": "No data provided"}), 400
+    if not data or not isinstance(data, dict):
+        return jsonify({"error": "No data provided or invalid payload"}), 400
         
     if 'amount' in data:
         try:
@@ -124,6 +132,10 @@ def update_expense(expense_id):
             return jsonify({"error": "Date must be in YYYY-MM-DD format"}), 400
             
     if 'description' in data:
+        if not isinstance(data['description'], str):
+            return jsonify({"error": "Description must be a string"}), 400
+        if len(data['description']) > 255:
+            return jsonify({"error": "Description cannot exceed 255 characters"}), 400
         expense.description = data['description']
         
     db.session.commit()

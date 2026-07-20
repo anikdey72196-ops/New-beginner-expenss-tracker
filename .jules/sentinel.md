@@ -41,3 +41,8 @@
 **Vulnerability:** The application was missing strict length validation on user inputs (username, password) before hitting the database or expensive hashing algorithms. Extremely long inputs could trigger unhandled database `DataError` exceptions or lead to Denial of Service (DoS) attacks via CPU exhaustion when hashing overly long passwords.
 **Learning:** Application-layer boundary checking is crucial. Database schema constraints (like `VARCHAR(80)`) will cause fatal errors if breached, and algorithms like bcrypt scale non-linearly with input length.
 **Prevention:** Always enforce explicit length constraints (e.g. using `Length(max=...)` validators in WTForms and `len() > max_len` checks in API routes) for usernames, passwords, and text fields to prevent DoS and DB crashes.
+
+## 2026-07-20 - [Fix] Inadequate JSON Payload Type Checking
+**Vulnerability:** The API endpoints processing JSON payloads (e.g., `auth.py`, `expenses.py`) lacked type checking (e.g., `isinstance(data, dict)`). Attackers could trigger unhandled `AttributeError` (e.g., calling `.get()` on a list) resulting in a 500 Internal Server Error (Denial of Service).
+**Learning:** `request.get_json()` might return types other than dictionaries (e.g., a list or string), leading to unhandled exceptions when attempting to access keys like `data.get('password')`.
+**Prevention:** Always validate that incoming JSON payloads are instances of `dict` before proceeding to parse out individual attributes via methods like `.get()`.
