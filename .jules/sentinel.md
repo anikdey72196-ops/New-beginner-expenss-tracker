@@ -41,3 +41,8 @@
 **Vulnerability:** The application was missing strict length validation on user inputs (username, password) before hitting the database or expensive hashing algorithms. Extremely long inputs could trigger unhandled database `DataError` exceptions or lead to Denial of Service (DoS) attacks via CPU exhaustion when hashing overly long passwords.
 **Learning:** Application-layer boundary checking is crucial. Database schema constraints (like `VARCHAR(80)`) will cause fatal errors if breached, and algorithms like bcrypt scale non-linearly with input length.
 **Prevention:** Always enforce explicit length constraints (e.g. using `Length(max=...)` validators in WTForms and `len() > max_len` checks in API routes) for usernames, passwords, and text fields to prevent DoS and DB crashes.
+
+## 2024-07-23 - [Fix] Inconsistent and Missing Validation Rules for Authentication Entry Points
+**Vulnerability:** The application had duplicated and conflicting length validators for `username` and `password` fields across `form.py` and `auth.py`, allowing oversized payload bypasses (up to 128 chars) that bypassed standard bounds (e.g. `bcrypt` 72-byte limit).
+**Learning:** When multiple entry points for authentication exist (e.g. JSON API vs Form Post), validation logic easily becomes desynchronized and error-prone due to copy-pasting code or missing bounds checking. Type checking payload data from JSON API must occur prior to operations like `len()`.
+**Prevention:** Ensure tight length limits matching cryptographic bounds (72 chars for `bcrypt`) and centralize validation rules as much as possible to avoid disparate boundaries across UI and API entry points. Verify that `request.get_json()` inputs are strictly typed (e.g. `isinstance(var, str)`) before processing them.
